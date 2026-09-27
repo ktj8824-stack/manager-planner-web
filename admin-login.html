@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>마스터 관제 포털 | HQ Enterprise Scheduler</title>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Pretendard', -apple-system, sans-serif;
+      background: #f0f2f5;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 24px;
+      padding: 48px 40px 40px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.10);
+    }
+
+    .logo-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      margin-bottom: 28px;
+    }
+
+    .logo-img {
+      width: 80px;
+      height: 80px;
+      border-radius: 20px;
+      object-fit: cover;
+      margin-bottom: 18px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+    }
+
+    .logo-fallback {
+      width: 80px;
+      height: 80px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      font-weight: 900;
+      color: #e8e8e8;
+      letter-spacing: -2px;
+      margin-bottom: 18px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+      font-family: 'Georgia', serif;
+    }
+
+    .title {
+      font-size: 28px;
+      font-weight: 900;
+      color: #0f172a;
+      letter-spacing: -0.5px;
+      line-height: 1.2;
+    }
+
+    .subtitle {
+      font-size: 13px;
+      font-weight: 600;
+      color: #94a3b8;
+      letter-spacing: 1.5px;
+      margin-top: 4px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      color: #374151;
+      margin-bottom: 8px;
+    }
+
+    .form-input {
+      width: 100%;
+      background: #f1f5f9;
+      border: 2px solid transparent;
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-size: 15px;
+      font-family: 'Pretendard', sans-serif;
+      color: #0f172a;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .form-input:focus {
+      background: #fff;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 4px rgba(59,130,246,0.10);
+    }
+
+    .form-input::placeholder {
+      color: #94a3b8;
+    }
+
+    .btn-submit {
+      width: 100%;
+      background: #3b82f6;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 800;
+      font-family: 'Pretendard', sans-serif;
+      padding: 16px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 8px;
+      letter-spacing: -0.3px;
+    }
+
+    .btn-submit:hover { background: #2563eb; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(59,130,246,0.35); }
+    .btn-submit:active { transform: translateY(0); }
+    .btn-submit:disabled { background: #93c5fd; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    .error-msg {
+      color: #ef4444;
+      font-size: 13px;
+      font-weight: 600;
+      text-align: center;
+      margin-top: 14px;
+      padding: 10px 14px;
+      background: #fef2f2;
+      border-radius: 8px;
+      border: 1px solid #fecaca;
+      display: none;
+    }
+
+    .success-msg {
+      color: #059669;
+      font-size: 13px;
+      font-weight: 600;
+      text-align: center;
+      margin-top: 14px;
+      padding: 10px 14px;
+      background: #ecfdf5;
+      border-radius: 8px;
+      border: 1px solid #a7f3d0;
+      display: none;
+    }
+
+    .footer-links {
+      text-align: center;
+      margin-top: 28px;
+      font-size: 13px;
+      color: #94a3b8;
+    }
+
+    .footer-links a {
+      color: #3b82f6;
+      text-decoration: none;
+      font-weight: 700;
+      display: block;
+      margin-top: 6px;
+    }
+    .footer-links a:hover { text-decoration: underline; }
+
+    .divider {
+      height: 1px;
+      background: #e2e8f0;
+      margin: 24px 0;
+    }
+
+    .loading-spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .supabase-notice {
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 12px;
+      color: #c2410c;
+      margin-bottom: 20px;
+      display: none;
+    }
+    .supabase-notice strong { font-weight: 800; }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <div class="logo-wrap">
+      <img src="img/logo.jpg" alt="Logo" class="logo-img"
+        onerror="this.style.display='none'; document.getElementById('logo-fallback').style.display='flex';">
+      <div class="logo-fallback" id="logo-fallback" style="display:none;">MP</div>
+      <div class="title">마스터 관제 포털</div>
+      <div class="subtitle">HQ ENTERPRISE SCHEDULER</div>
+    </div>
+
+    <div class="supabase-notice" id="supabase-notice">
+      <strong>⚠️ 오프라인 모드:</strong> Supabase 연결이 필요합니다. 관제 포털 설정에서 Supabase URL과 Key를 먼저 입력해 주세요.
+    </div>
+
+    <form id="admin-login-form">
+      <div class="form-group">
+        <label class="form-label" for="admin-email">사내 그룹웨어 이메일 (ID)</label>
+        <input type="email" id="admin-email" class="form-input"
+          placeholder="ceo@star-ent.com" required autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="admin-pw">보안 비밀번호</label>
+        <input type="password" id="admin-pw" class="form-input"
+          placeholder="비밀번호 입력" required autocomplete="current-password">
+      </div>
+
+      <button type="submit" class="btn-submit" id="btn-login">포털 접속 (Sign In)</button>
+
+      <div id="login-error" class="error-msg"></div>
+      <div id="login-success" class="success-msg"></div>
+    </form>
+
+    <div class="divider"></div>
+
+    <div class="footer-links">
+      <a href="admin-register.html" style="color:#64748b; font-weight:600; font-size:13px;">
+        회사(엔터테인먼트) 최초 가입하기
+      </a>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-client.js"></script>
+  <script>
+    // 초기화
+    if (window.SupabaseClient) {
+      SupabaseClient.init();
+    }
+
+    window.addEventListener('load', async () => {
+      if (!window.SupabaseClient || !SupabaseClient.isConfigured) {
+        document.getElementById('supabase-notice').style.display = 'block';
+        return;
+      }
+
+      // 저장된 이메일 복원
+      const savedEmail = localStorage.getItem('admin_saved_email');
+      if (savedEmail) {
+        document.getElementById('admin-email').value = savedEmail;
+      }
+    });
+
+    // 로그인 폼 제출
+    document.getElementById('admin-login-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const email = document.getElementById('admin-email').value.trim();
+      const pw = document.getElementById('admin-pw').value.trim();
+      const btnLogin = document.getElementById('btn-login');
+      const errEl = document.getElementById('login-error');
+      const successEl = document.getElementById('login-success');
+
+      errEl.style.display = 'none';
+      successEl.style.display = 'none';
+
+      // Supabase 미연결 시
+      if (!window.SupabaseClient || !SupabaseClient.isConfigured) {
+        errEl.textContent = '⚠️ Supabase 연결이 필요합니다. 관리자에게 문의하세요.';
+        errEl.style.display = 'block';
+        return;
+      }
+
+      // 로딩 상태
+      btnLogin.disabled = true;
+      btnLogin.innerHTML = '<span class="loading-spinner"></span>로그인 중...';
+
+      try {
+        const result = await SupabaseClient.signIn(email, pw);
+
+        // 프로필(role) 판정: user_metadata 및 profile 우선
+        const meta = SupabaseClient.currentUser?.user_metadata || {};
+        const profile = SupabaseClient.currentProfile;
+        const role = meta.role || profile?.role || localStorage.getItem('bp_user_role') || (email.toLowerCase().includes('ceo') || email.toLowerCase().includes('admin') ? 'ceo' : 'ceo');
+
+        // 관리자 전용 세션 정보 저장 (앱과 세션 분리)
+        localStorage.setItem('admin_saved_email', email);
+        localStorage.setItem('admin_bp_logged_in', 'true');
+        localStorage.setItem('admin_bp_user_role', role);
+        localStorage.setItem('admin_bp_onboarded', 'true');
+        
+        let displayName = meta.name || profile?.name || '';
+        if (!displayName || displayName.includes('@')) {
+          try {
+            const { data: profileRow } = await SupabaseClient.client
+              .from('profiles')
+              .select('name')
+              .eq('id', SupabaseClient.currentUser?.id)
+              .single();
+            if (profileRow?.name && !profileRow.name.includes('@')) {
+              displayName = profileRow.name;
+            }
+          } catch (e) { /* silent */ }
+        }
+        localStorage.setItem('admin_bp_user_name', displayName || email.split('@')[0]);
+        localStorage.setItem('admin_bp_user_email', email);
+
+        if (role === 'ceo' || role === 'hq_admin') {
+          // ── 회사명: user_metadata 및 DB에서 실제 회사명 조회 ──
+          if (localStorage.getItem('admin_bp_company_name') === 'STAR') {
+            localStorage.removeItem('admin_bp_company_name');
+            localStorage.removeItem('reg_company_name');
+          }
+
+          let finalCompanyName = meta.company_name || localStorage.getItem('admin_bp_company_name') || localStorage.getItem('bp_company_name');
+          if (meta.company_name) {
+            localStorage.setItem('admin_bp_company_name', meta.company_name);
+            localStorage.setItem('reg_company_name', meta.company_name);
+          }
+
+          successEl.textContent = '✅ 본사 총괄 관리자 로그인 성공! 관제 포털로 이동합니다...';
+          successEl.style.display = 'block';
+
+          setTimeout(() => {
+            window.location.href = 'index.html';
+          }, 700);
+
+        } else {
+          // 매니저 / 스태프 권한: 매니저 전용 플래너로 이동
+          localStorage.setItem('bp_logged_in', 'true');
+          localStorage.setItem('bp_user_role', role);
+          localStorage.setItem('bp_user_name', displayName || email.split('@')[0]);
+          localStorage.setItem('bp_user_email', email);
+          localStorage.setItem('bp_manager_id', profile?.id || SupabaseClient.currentUser?.id || 'mgr_2');
+          successEl.textContent = `✅ 현장 매니저 [${displayName || email}] 로그인 성공! 매니저 플래너로 이동합니다...`;
+          successEl.style.display = 'block';
+
+          setTimeout(() => {
+            window.location.href = 'index.html';
+          }, 700);
+        }
+
+      } catch (err) {
+        console.error('로그인 오류:', err);
+        let msg = '이메일 또는 비밀번호가 일치하지 않습니다.';
+        if (err.message && err.message.includes('Email not confirmed')) {
+          msg = '📧 이메일 인증이 필요합니다. 가입 시 받은 인증 메일을 확인해 주세요.';
+        } else if (err.message && err.message.includes('Invalid login credentials')) {
+          msg = '이메일 또는 비밀번호가 일치하지 않습니다.';
+        }
+        errEl.textContent = msg;
+        errEl.style.display = 'block';
+        btnLogin.disabled = false;
+        btnLogin.innerHTML = '포털 접속 (Sign In)';
+      }
+    });
+  </script>
+</body>
+</html>
