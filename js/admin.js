@@ -1867,14 +1867,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const artists = await window.hqStore.getArtists();
 
     let html = `
+      <!-- 요일 헤더 (컴팩트 슬림 바) -->
+      <div style="display:grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap:8px; width:100%; box-sizing:border-box; margin-bottom:8px;">
+        <div style="text-align:center; padding:6px 0; font-size:12.5px; font-weight:800; color:#ef4444; background:var(--bg-card); border-radius:8px; border:1px solid var(--border-color); min-width:0; box-sizing:border-box;">일</div>
+        <div style="text-align:center; padding:6px 0; font-size:12.5px; font-weight:700; color:var(--text-dim); background:var(--bg-card); border-radius:8px; border:1px solid var(--border-color); min-width:0; box-sizing:border-box;">월</div>
+        <div style="text-align:center; padding:6px 0; font-size:12.5px; font-weight:700; color:var(--text-dim); background:var(--bg-card); border-radius:8px; border:1px solid var(--border-color); min-width:0; box-sizing:border-box;">화</div>
+        <div style="text-align:center; padding:6px 0; font-size:12.5px; font-weight:700; color:var(--text-dim); background:var(--bg-card); border-radius:8px; border:1px solid var(--border-color); min-width:0; box-sizing:border-box;">수</div>
+        <div style="text-align:center; padding:6px 0; font-size:12.5px; font-weight:700; color:var(--text-dim); background:var(--bg-card); border-radius:8px; border:1px solid var(--border-color); min-width:0; box-sizing:border-box;">목</div>
+        <div style="text-align:center; padding:6px 0; font-size:12.5px; font-weight:700; color:var(--text-dim); background:var(--bg-card); border-radius:8px; border:1px solid var(--border-color); min-width:0; box-sizing:border-box;">금</div>
+        <div style="text-align:center; padding:6px 0; font-size:12.5px; font-weight:800; color:#3b82f6; background:var(--bg-card); border-radius:8px; border:1px solid var(--border-color); min-width:0; box-sizing:border-box;">토</div>
+      </div>
+      <!-- 월간 날짜 그리드 -->
       <div style="display:grid; grid-template-columns: repeat(7, minmax(0, 1fr)); grid-auto-rows: minmax(110px, auto); gap:8px; width:100%; box-sizing:border-box;">
-        <div style="text-align:center; padding:10px 0; font-size:13px; font-weight:700; color:var(--accent-pink); background:var(--bg-card); border-radius:8px; border:1px solid var(--border-color); min-width:0; box-sizing:border-box;">일</div>
-        <div style="text-align:center; padding:10px 0; font-size:13px; font-weight:700; color:var(--text-dim); background:var(--bg-card); border-radius:8px; border:1px solid var(--border-color); min-width:0; box-sizing:border-box;">월</div>
-        <div style="text-align:center; padding:10px 0; font-size:13px; font-weight:700; color:var(--text-dim); background:var(--bg-card); border-radius:8px; border:1px solid var(--border-color); min-width:0; box-sizing:border-box;">화</div>
-        <div style="text-align:center; padding:10px 0; font-size:13px; font-weight:700; color:var(--text-dim); background:var(--bg-card); border-radius:8px; border:1px solid var(--border-color); min-width:0; box-sizing:border-box;">수</div>
-        <div style="text-align:center; padding:10px 0; font-size:13px; font-weight:700; color:var(--text-dim); background:var(--bg-card); border-radius:8px; border:1px solid var(--border-color); min-width:0; box-sizing:border-box;">목</div>
-        <div style="text-align:center; padding:10px 0; font-size:13px; font-weight:700; color:var(--text-dim); background:var(--bg-card); border-radius:8px; border:1px solid var(--border-color); min-width:0; box-sizing:border-box;">금</div>
-        <div style="text-align:center; padding:10px 0; font-size:13px; font-weight:700; color:var(--accent-cyan); background:var(--bg-card); border-radius:8px; border:1px solid var(--border-color); min-width:0; box-sizing:border-box;">토</div>
     `;
 
     // 이전 달 빈 칸 (기본 min-height 110px, 그리드 행 높이에 자동 동기화)
