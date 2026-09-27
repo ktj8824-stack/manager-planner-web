@@ -1890,6 +1890,60 @@ window.AuthPersona = {
     return { success: false, message: '이메일 또는 비밀번호가 일치하지 않습니다.' };
   },
 
+  // ── 공지 / 알림 관리 ──
+  HQ_NOTICE_KEY: 'HQ_NOTIFICATIONS_V2',
+
+  getBroadcasts() {
+    try {
+      const raw = localStorage.getItem(this.HQ_NOTICE_KEY);
+      const list = raw ? JSON.parse(raw) : [];
+      // 최신순 정렬, 최대 30개
+      return list
+        .slice()
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .slice(0, 30)
+        .map(n => ({
+          id:      n.id,
+          title:   n.title   || (n.isUrgent ? '🚨 긴급 공지' : '📢 본사 공지'),
+          content: n.content || '',
+          date:    n.createdAt ? new Date(n.createdAt).toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' }).replace('. ', '-').replace('.', '') : '',
+          urgent:  n.isUrgent || false,
+          targetId: n.targetId || 'ALL'
+        }));
+    } catch (e) {
+      return [];
+    }
+  },
+
+  addBroadcast({ title = '', content, isUrgent = false, targetId = 'ALL' }) {
+    if (!content) return;
+    const notiData = {
+      id:        'noti_' + Date.now(),
+      title:     title || (isUrgent ? '🚨 긴급 공지' : '📢 본사 공지'),
+      content,
+      isUrgent,
+      targetId,
+      createdAt: new Date().toISOString()
+    };
+    try {
+      const raw = localStorage.getItem(this.HQ_NOTICE_KEY);
+      const list = raw ? JSON.parse(raw) : [];
+      list.push(notiData);
+      // 최대 100개 유지
+      if (list.length > 100) list.splice(0, list.length - 100);
+      localStorage.setItem(this.HQ_NOTICE_KEY, JSON.stringify(list));
+    } catch (e) {}
+
+    // BroadcastChannel 실시간 전송
+    try {
+      if (this.broadcast) {
+        this.broadcast.postMessage({ type: 'NEW_HQ_MESSAGE', payload: notiData });
+      }
+    } catch (e) {}
+
+    return notiData;
+  },
+
   async logout(redirectUrl = 'index.html') {
     if (window.SupabaseClient) {
       try {
