@@ -367,6 +367,7 @@ body {
 }
 
 .btn-primary {
+  width: auto;
   background: var(--primary-gradient);
   color: #fff;
   border: none;
