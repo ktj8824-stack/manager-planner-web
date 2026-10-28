@@ -322,7 +322,7 @@ const Timeline = {
           <div class="tl-card" style="${isDone ? 'opacity:0.65;' : ''}">
             <div class="tl-time">${esc(step.time || '')}</div>
             <div class="tl-event" style="display:flex; align-items:center; justify-space-between;">
-              <span style="${isDone ? 'text-decoration:line-through;' : ''}">${esc(step.label)}${esc(checkMark)}</span>
+              <span style="${isDone ? 'text-decoration:line-through;' : ''}">${esc(step.label)}${checkMark}</span>
             </div>
             ${!isDone && (step.label.includes('출발') || step.label.includes('도착')) ? `
               <div class="tl-nav-btns" style="margin-top:8px;">
