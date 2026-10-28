@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>결제 결과 | HQ 엔터테인먼트 스케줄러</title>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Pretendard', -apple-system, sans-serif;
+      background: #0f172a; min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      padding: 24px 16px; color: #f8fafc;
+    }
+    body::before {
+      content: ''; position: fixed; top: -50%; left: -50%; width: 200%; height: 200%;
+      background: radial-gradient(ellipse at 20% 20%, rgba(99,102,241,0.15) 0%, transparent 50%),
+                  radial-gradient(ellipse at 80% 80%, rgba(139,92,246,0.10) 0%, transparent 50%);
+      pointer-events: none; z-index: 0;
+    }
+    .wrap {
+      position: relative; z-index: 1;
+      background: #1e293b; border: 1px solid #334155; border-radius: 24px;
+      padding: 48px 40px; max-width: 420px; width: 100%; text-align: center;
+    }
+    .icon { font-size: 64px; margin-bottom: 20px; animation: popIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both; }
+    @keyframes popIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .result-title { font-size: 24px; font-weight: 900; margin-bottom: 8px; }
+    .result-sub { font-size: 14px; color: #94a3b8; margin-bottom: 28px; line-height: 1.6; }
+    .info-box { background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 16px; margin-bottom: 24px; text-align: left; }
+    .info-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; border-bottom: 1px solid #1e293b; }
+    .info-row:last-child { border-bottom: none; }
+    .info-row span:first-child { color: #64748b; }
+    .info-row span:last-child { color: #e2e8f0; font-weight: 600; }
+    .btn-primary {
+      display: block; width: 100%; padding: 16px; border-radius: 12px; border: none;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff;
+      font-size: 15px; font-weight: 700; font-family: 'Pretendard', sans-serif;
+      cursor: pointer; text-decoration: none; margin-bottom: 10px;
+      transition: all 0.2s; box-shadow: 0 4px 16px rgba(99,102,241,0.3);
+    }
+    .btn-primary:hover { transform: translateY(-2px); }
+    .btn-secondary {
+      display: block; width: 100%; padding: 14px; border-radius: 12px;
+      border: 1px solid #334155; background: transparent; color: #94a3b8;
+      font-size: 14px; font-weight: 600; font-family: 'Pretendard', sans-serif;
+      cursor: pointer; text-decoration: none; transition: all 0.2s;
+    }
+    .btn-secondary:hover { border-color: #6366f1; color: #f8fafc; }
+    .confetti { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+  </style>
+</head>
+<body>
+<div id="test-banner" style="position:sticky;top:0;z-index:9999;background:#f59e0b;color:#1f1300;text-align:center;font:700 13px/1.4 Pretendard,sans-serif;padding:8px 12px;">🧪 테스트 결제 — 실제 결제되지 않습니다 (카드가 청구되지 않아요)</div>
+<canvas class="confetti" id="confetti-canvas"></canvas>
+<div class="wrap" id="result-wrap">
+  <div class="icon" id="result-icon">⏳</div>
+  <div class="result-title" id="result-title">처리 중...</div>
+  <div class="result-sub" id="result-sub">결제 결과를 확인하고 있습니다.</div>
+  <div class="info-box" id="info-box" style="display:none;">
+    <div class="info-row"><span>주문번호</span><span id="r-order-id">—</span></div>
+    <div class="info-row"><span>결제 금액</span><span id="r-amount">—</span></div>
+    <div class="info-row" id="r-method-row" style="display:none;"><span>결제 수단</span><span id="r-method">—</span></div>
+    <div class="info-row" id="r-va-bank-row" style="display:none;"><span>입금 은행</span><span id="r-va-bank">—</span></div>
+    <div class="info-row" id="r-va-acc-row" style="display:none;"><span>가상 계좌</span><span id="r-va-acc">—</span></div>
+    <div class="info-row" id="r-va-holder-row" style="display:none;"><span>예금주</span><span id="r-va-holder">—</span></div>
+    <div class="info-row" id="r-va-due-row" style="display:none;"><span>입금 기한</span><span id="r-va-due">—</span></div>
+    <div class="info-row" id="r-slots-row"><span>매니저 슬롯</span><span id="r-slots">—</span></div>
+    <div class="info-row" id="r-date-row"><span>결제 일시</span><span id="r-date">—</span></div>
+    <div class="info-row" id="r-receipt-row" style="display:none;"><span>매출 전표</span><span id="r-receipt">—</span></div>
+  </div>
+  <button class="btn-primary" id="btn-va-confirm" style="display:none; margin-bottom:10px; background:linear-gradient(135deg,#059669,#10b981);" onclick="simulateVirtualDepositDone()">⚡ 입금 확인 시뮬레이션 (즉시 승인)</button>
+  <button class="btn-primary" id="btn-main" onclick="goToAdmin()">&#127968; 관제 포털로 이동</button>
+  <button class="btn-secondary" id="btn-retry" onclick="goToPayment()" style="display:none;">&#8617; 다시 결제하기</button>
+</div>
+
+<script>
+  const IS_DEV_HOST = ['localhost','127.0.0.1',''].includes(location.hostname) || location.protocol === 'file:';
+  const params       = new URLSearchParams(location.search);
+  const status       = params.get('status');
+  const plan         = params.get('plan') || 'standard';
+  const isProPlan    = (plan === 'pro');
+  const returnTarget = params.get('return') || (isProPlan ? 'mobile' : 'admin');
+  const paymentKey   = params.get('paymentKey') || '';
+  const orderId      = params.get('orderId') || '';
+  const addSlots     = parseInt(params.get('addSlots') || '0');
+  const totalSlots   = parseInt(params.get('totalSlots') || (isProPlan ? '1' : '2'));
+  const totalFee     = parseInt(params.get('amount') || params.get('totalFee') || (isProPlan ? '4900' : '100000'));
+
+  const iconEl    = document.getElementById('result-icon');
+  const titleEl   = document.getElementById('result-title');
+  const subEl     = document.getElementById('result-sub');
+  const infoBox   = document.getElementById('info-box');
+  const btnRetry  = document.getElementById('btn-retry');
+  const btnMain   = document.getElementById('btn-main');
+  const btnVaConfirm = document.getElementById('btn-va-confirm');
+
+  let currentPayData = null;
+
+  async function processPaymentResult() {
+    // 1) 결제 실패 또는 취소
+    if (status === 'fail' || (!paymentKey && status !== 'success')) {
+      showFail(params.get('message') || '결제가 취소되었거나 유효하지 않은 요청입니다.');
+      return;
+    }
+
+    // 2) 토스페이먼츠 paymentKey가 존재하는 경우 백엔드 승인 API 호출
+    if (paymentKey) {
+      iconEl.textContent  = '⏳';
+      titleEl.textContent = '결제 승인 검증 중...';
+      subEl.textContent   = '토스페이먼츠 금융 결제망과 안전하게 승인 통신을 진행하고 있습니다.';
+
+      try {
+        const res = await fetch('/api/payments/confirm', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            paymentKey,
+            orderId,
+            amount: totalFee
+          })
+        });
+
+        const data = await res.json();
+        currentPayData = data;
+
+        if (res.ok && (data.status === 'DONE' || data.approvedAt)) {
+          // 승인 성공 (카드 / 간편결제 등 즉시 결제)
+          showSuccess(data);
+        } else if (res.ok && (data.status === 'WAITING_FOR_DEPOSIT' || data.virtualAccount)) {
+          // 가상계좌 발급 성공 (입금 대기)
+          showVirtualAccount(data);
+        } else {
+          showFail(data.message || data.error || '토스페이먼츠 승인 처리에 실패했습니다. (코드: ' + (data.code || 'UNKNOWN') + ')');
+        }
+      } catch (err) {
+        console.warn('결제 승인 통신 에러:', err);
+        if (IS_DEV_HOST) showSuccess({ method: '신용카드(테스트)', status: 'DONE' });
+        else showFail('테스트 결제 서버가 연결되지 않아 승인할 수 없습니다. 결제는 진행되지 않았습니다.');
+      }
+    } else if (status === 'success') {
+      if (!IS_DEV_HOST) {
+        showFail('결제 승인 정보가 없어 완료 처리할 수 없습니다. 결제는 진행되지 않았습니다.');
+        return;
+      }
+      const vaBank = params.get('vaBank');
+      const vaAcc = params.get('vaAcc');
+      const vaHolder = params.get('vaHolder');
+      const vaDue = params.get('vaDue');
+
+      if (params.get('method') === 'VIRTUAL_ACCOUNT' || vaAcc) {
+        showVirtualAccount({
+          virtualAccount: {
+            bank: vaBank || 'KB국민은행',
+            accountNumber: vaAcc || '004-819230-02-123',
+            customerName: vaHolder || '공진문',
+            dueDate: vaDue || new Date(Date.now() + 7 * 86400000).toISOString()
+          }
+        });
+      } else {
+        showSuccess({ method: '시뮬레이션 승인', status: 'DONE' });
+      }
+    }
+  }
+
+  const esc = (v) => String(v ?? '').replace(/[&<>"'`]/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','`':'&#96;' }[c]));
+  function showVirtualAccount(payData) {
+    iconEl.textContent  = '🏦';
+    titleEl.textContent = '가상계좌 발급 완료';
+    titleEl.style.color = '#38bdf8';
+    subEl.innerHTML     = '아래 전용 가상계좌로 입금 기한 내에 입금해 주시면<br>입금 즉시 구독 슬롯이 자동으로 활성화됩니다.';
+    infoBox.style.display = 'block';
+
+    const va = payData.virtualAccount || {};
+    document.getElementById('r-order-id').textContent = orderId || '—';
+    document.getElementById('r-amount').textContent   = totalFee.toLocaleString() + '원';
+    document.getElementById('r-slots').textContent    = isProPlan ? 'PRO 멤버십 (1인 무제한)' : (totalSlots + '명 (추가 ' + addSlots + '명)');
+    document.getElementById('r-date').textContent     = new Date().toLocaleString('ko-KR');
+
+    // 결제 수단
+    document.getElementById('r-method').textContent = '가상계좌 (무통장입금)';
+    document.getElementById('r-method-row').style.display = 'flex';
+
+    // 가상계좌 전용 항목
+    if (va.bank || va.bankCode) {
+      document.getElementById('r-va-bank').textContent = va.bank || va.bankCode;
+      document.getElementById('r-va-bank-row').style.display = 'flex';
+    }
+    if (va.accountNumber) {
+      {
+        const acc = String(va.accountNumber);
+        const box = document.getElementById('r-va-acc');
+        box.innerHTML = `<span style="color:#a5f3fc;font-weight:700;">${esc(acc)}</span> <button type="button" id="btn-copy-acc" style="margin-left:6px;padding:2px 8px;border-radius:6px;border:1px solid #475569;background:#1e293b;color:#cbd5e1;font-size:11px;cursor:pointer;">복사</button>`;
+        document.getElementById('btn-copy-acc').onclick = () => { navigator.clipboard.writeText(acc); alert('계좌번호가 복사되었습니다: ' + acc); };
+      }
+      document.getElementById('r-va-acc-row').style.display = 'flex';
+    }
+    if (va.customerName) {
+      document.getElementById('r-va-holder').textContent = va.customerName;
+      document.getElementById('r-va-holder-row').style.display = 'flex';
+    }
+    if (va.dueDate) {
+      document.getElementById('r-va-due').textContent = new Date(va.dueDate).toLocaleString('ko-KR');
+      document.getElementById('r-va-due-row').style.display = 'flex';
+    }
+
+    // 입금 확인 시뮬레이션 버튼 표시 (테스트용)
+    btnVaConfirm.style.display = IS_DEV_HOST ? 'block' : 'none';
+    btnMain.textContent = (isProPlan || returnTarget === 'mobile') ? '플래너 앱으로 돌아가기' : '관제 포털로 돌아가기';
+
+    // 스토리지에 입금 대기 상태 저장
+    saveSubscriptionRecord(payData, 'waiting_deposit');
+  }
+
+  function simulateVirtualDepositDone() {
+    if (!IS_DEV_HOST) return;
+    btnVaConfirm.style.display = 'none';
+    showSuccess({
+      ...currentPayData,
+      status: 'DONE',
+      method: (currentPayData && currentPayData.virtualAccount ? (currentPayData.virtualAccount.bank + ' 가상계좌 (입금완료)') : '가상계좌 (입금완료)')
+    });
+  }
+
+  function showSuccess(payData) {
+    iconEl.textContent  = '🎉';
+    titleEl.textContent = '결제 및 승인 완료!';
+    titleEl.style.color = '#a5f3fc';
+
+    if (isProPlan) {
+      subEl.innerHTML = '매니저플래너 PRO 멤버십이 성공적으로 활성화되었습니다.<br>이제 모든 프리미엄 기능을 자유롭게 이용하실 수 있습니다.';
+      localStorage.setItem('bp_pro', 'true');
+    } else {
+      subEl.innerHTML = '구독이 성공적으로 활성화되었습니다.<br>이제 매니저 계정을 추가하여 협업할 수 있습니다.';
+    }
+    infoBox.style.display = 'block';
+
+    const now = new Date();
+    document.getElementById('r-order-id').textContent = orderId || '—';
+    document.getElementById('r-amount').textContent   = totalFee.toLocaleString() + '원 / 월';
+    document.getElementById('r-slots').textContent    = isProPlan ? 'PRO 멤버십 (1인 무제한)' : (totalSlots + '명 (추가 ' + addSlots + '명)');
+    document.getElementById('r-date').textContent     = now.toLocaleString('ko-KR');
+
+    // 결제 수단 및 영수증 처리
+    if (payData) {
+      const methodEl = document.getElementById('r-method');
+      const methodRow = document.getElementById('r-method-row');
+      let methodText = payData.method || '신용카드';
+      if (payData.card && payData.card.issuerCode) {
+        methodText += ` (${payData.card.issuerCode})`;
+      }
+      if (payData.card && payData.card.approveNo) {
+        methodText += ` [승인: ${payData.card.approveNo}]`;
+      }
+      methodEl.textContent = methodText;
+      methodRow.style.display = 'flex';
+
+      if (payData.receipt && payData.receipt.url) {
+        const receiptRow = document.getElementById('r-receipt-row');
+        const receiptEl = document.getElementById('r-receipt');
+        receiptEl.innerHTML = `<a href="${esc(payData.receipt.url)}" target="_blank" rel="noopener" style="color:#6366f1;text-decoration:underline;">영수증 보기</a>`;
+        receiptRow.style.display = 'flex';
+      }
+    }
+
+    // 구독 정보 localStorage 업데이트
+    saveSubscriptionRecord(payData, 'active');
+
+    // 축하 컨페티 효과
+    launchConfetti();
+
+    // 자동 이동 설정
+    const targetName = (isProPlan || returnTarget === 'mobile') ? '📱 매니저 플래너 앱으로 이동' : '관제 포털로 이동';
+    let count = 4;
+    btnMain.textContent = `${targetName} (${count}초)`;
+    const timer = setInterval(() => {
+      count--;
+      btnMain.textContent = `${targetName} (${count}초)`;
+      if (count <= 0) { clearInterval(timer); goToAdmin(); }
+    }, 1000);
+  }
+
+  function saveSubscriptionRecord(payData, subStatus = 'active') {
+    const baseSubKey = 'HQ_SUBSCRIPTION_V6';
+    const rawEmail = (localStorage.getItem('admin_bp_user_email') || localStorage.getItem('bp_user_email') || '').trim().toLowerCase();
+    const safeKey = rawEmail ? rawEmail.replace(/[^a-z0-9_]/g, '_') : 'ceo_kjm_ent_com';
+    const accountSubKey = `${baseSubKey}_${safeKey}`;
+    const now = new Date();
+
+    try {
+      const existing = JSON.parse(localStorage.getItem(accountSubKey) || localStorage.getItem(baseSubKey) || '{}');
+      const updatedSub = {
+        ...existing,
+        plan: plan,
+        baseSlots: isProPlan ? 1 : (existing.baseSlots || 2),
+        additionalSlots: isProPlan ? 0 : addSlots,
+        totalSlots: isProPlan ? 1 : ((existing.baseSlots || 2) + addSlots),
+        monthlyFee: totalFee,
+        status: subStatus,
+        lastPaidAt: now.toISOString(),
+        lastOrderId: orderId,
+        paymentKey: paymentKey || (payData && payData.paymentKey) || '',
+        receiptUrl: payData && payData.receipt ? payData.receipt.url : '',
+        virtualAccount: payData && payData.virtualAccount ? payData.virtualAccount : (existing.virtualAccount || null)
+      };
+      localStorage.setItem(baseSubKey, JSON.stringify(updatedSub));
+      localStorage.setItem(accountSubKey, JSON.stringify(updatedSub));
+      if (accountSubKey !== `${baseSubKey}_ceo_kjm_ent_com`) {
+        localStorage.setItem(`${baseSubKey}_ceo_kjm_ent_com`, JSON.stringify(updatedSub));
+      }
+
+      // 결제 기록 로그 추가
+      const logsKey = 'HQ_PAYMENT_LOGS';
+      const logs = JSON.parse(localStorage.getItem(logsKey) || '[]');
+      logs.unshift({
+        orderId,
+        plan: isProPlan ? 'PRO' : 'ENTERPRISE',
+        amount: totalFee,
+        status: subStatus,
+        paidAt: now.toISOString(),
+        paymentKey: paymentKey || '',
+        receiptUrl: payData && payData.receipt ? payData.receipt.url : '',
+        method: payData ? (payData.method || (subStatus === 'waiting_deposit' ? '가상계좌' : 'CARD')) : 'CARD'
+      });
+      localStorage.setItem(logsKey, JSON.stringify(logs.slice(0, 30)));
+    } catch(e) {
+      console.warn('구독 정보 저장 중 오류:', e);
+    }
+  }
+
+  function showFail(errorMsg) {
+    iconEl.textContent  = '❌';
+    titleEl.textContent = '결제 승인 실패';
+    titleEl.style.color = '#fca5a5';
+    subEl.textContent   = errorMsg;
+    btnRetry.style.display = 'block';
+    btnMain.textContent = (isProPlan || returnTarget === 'mobile') ? '플래너 앱으로 돌아가기' : '관제 포털로 돌아가기';
+  }
+
+  // 실행
+  processPaymentResult();
+
+  function goToAdmin() {
+    if (isProPlan || returnTarget === 'mobile') {
+      window.location.href = 'index.html#profile';
+    } else {
+      window.location.href = 'index.html';
+    }
+  }
+
+  function goToPayment() {
+    history.back();
+  }
+
+  // ── 컨페티 ──
+  function launchConfetti() {
+    const canvas = document.getElementById('confetti-canvas');
+    const ctx    = canvas.getContext('2d');
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const pieces = Array.from({ length: 120 }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * -canvas.height,
+      w: Math.random() * 10 + 5,
+      h: Math.random() * 6 + 3,
+      color: ['#6366f1','#8b5cf6','#a5f3fc','#f59e0b','#10b981','#ec4899'][Math.floor(Math.random()*6)],
+      speed: Math.random() * 3 + 1,
+      angle: Math.random() * 360,
+      spin:  Math.random() * 4 - 2,
+      drift: Math.random() * 2 - 1,
+    }));
+
+    let frame = 0;
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      pieces.forEach(p => {
+        ctx.save();
+        ctx.translate(p.x + p.w/2, p.y + p.h/2);
+        ctx.rotate(p.angle * Math.PI / 180);
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = Math.max(0, 1 - frame / 180);
+        ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+        ctx.restore();
+        p.y += p.speed; p.x += p.drift; p.angle += p.spin;
+      });
+      frame++;
+      if (frame < 200) requestAnimationFrame(draw);
+      else ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+    draw();
+  }
+</script>
+</body>
+</html>
