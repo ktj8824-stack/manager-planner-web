@@ -5,7 +5,7 @@
 
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>구독 결제 | HQ 엔터테인먼트 스케줄러</title>
+  <title>구독 결제 | 로드플래너</title>
   <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -105,7 +105,7 @@
     .sec-badge { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #475569; }
     .sec-badge span { font-size: 14px; }
   </style>
-<script src="js/icons.js?v=268"></script>
+<script src="js/icons.js?v=269"></script>
 </head>
 <body>
 <div id="test-banner" style="position:sticky;top:0;z-index:9999;background:#f59e0b;color:#1f1300;text-align:center;font:700 13px/1.4 Pretendard,sans-serif;padding:8px 12px;">🧪 테스트 결제 — 실제 결제되지 않습니다 (카드가 청구되지 않아요)</div>
@@ -238,7 +238,7 @@
   const addFee      = addSlots * 20000;
   const companyName = decodeURIComponent(params.get('company') || localStorage.getItem('bp_company_name') || localStorage.getItem('hq_company_name') || 'HQ 엔터테인먼트');
   const ceoName     = decodeURIComponent(params.get('ceo') || localStorage.getItem('bp_user_name') || localStorage.getItem('hq_user_name') || '공진문 대표');
-  const ceoEmail    = decodeURIComponent(params.get('email') || localStorage.getItem('bp_user_email') || localStorage.getItem('hq_user_email') || 'ceo@kjm-ent.com');
+  const ceoEmail    = decodeURIComponent(params.get('email') || localStorage.getItem('bp_user_email') || localStorage.getItem('hq_user_email') || '');
   const ceoPhone    = decodeURIComponent(params.get('phone') || localStorage.getItem('bp_user_phone') || localStorage.getItem('hq_user_phone') || '010-1234-5678');
   const returnTarget = params.get('return') || (isProPlan ? 'mobile' : 'admin');
 
@@ -367,7 +367,7 @@
       document.getElementById('buyer-name').value = name;
     }
     if (!email) {
-      email = ceoEmail || 'ceo@kjm-ent.com';
+      email = ceoEmail || '';
       document.getElementById('buyer-email').value = email;
     }
 
