@@ -150,7 +150,7 @@ const Expenses = {
           ${cur?.receipt_path ? `<button type="button" class="exp-link" onclick="Expenses.viewReceipt(${escJs(cur.receipt_path)})">영수증 보기</button>` : ''}
         </div>
         <button type="submit" id="exp-save" class="btn-primary" style="width:100%; padding:14px; font-weight:800;">${cur ? '저장' : '추가'}</button>
-        ${cur ? `<button type="button" class="btn-secondary" style="width:100%; padding:12px; color:#dc2626;" onclick="Expenses.remove(${escJs(cur.id)})">삭제</button>` : ''}
+        ${cur && cur.status === 'approved' ? `<p class="exp-lock-note" style="margin:0; font-size:13px; color:#636366; text-align:center;">본사가 승인한 경비라 지울 수 없어요. 고치면 다시 승인 대기로 바뀌어요.</p>` : cur ? `<button type="button" class="btn-secondary" style="width:100%; padding:12px; color:#dc2626;" onclick="Expenses.remove(${escJs(cur.id)})">삭제</button>` : ''}
       </form>`);
     const form = document.getElementById('exp-form');
     form?.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.isComposing && e.target.tagName === 'INPUT') { e.preventDefault(); e.target.blur(); } });
@@ -211,14 +211,16 @@ const Expenses = {
 
   async remove(id) {
     const cur = this.items.find(x => x.id === id);
-    if (!cur || !confirm(`${this.cat(cur.category).label} ${this.won(cur.amount)} 기록을 삭제할까요?`)) return;
+    if (!cur) return;
+    if (cur.status === 'approved') { U.toast('본사가 승인한 경비는 지울 수 없어요.'); return; }
+    if (!confirm(`${this.cat(cur.category).label} ${this.won(cur.amount)} 기록을 삭제할까요?`)) return;
     try {
       if (this.online()) await SupabaseClient.expenseDelete(id, cur.receipt_path);
       else this._saveLocal(this._local().filter(x => x.id !== id));
       App.closeModal();
       U.toast('삭제했어요');
       this.rerender();
-    } catch (e) { U.toast('삭제하지 못했어요. 잠시 후 다시 해 주세요.'); }
+    } catch (e) { U.toast(e && e.message === 'APPROVED_LOCKED' ? '본사가 승인한 경비는 지울 수 없어요.' : '삭제하지 못했어요. 잠시 후 다시 해 주세요.'); }
   },
 
   async viewReceipt(path) {
@@ -231,8 +233,11 @@ const Expenses = {
   _lines() {
     const name = localStorage.getItem('bp_user_name') || '';
     const [y, m] = this.month.split('-').map(Number);
-    const total = this.items.reduce((s, x) => s + Number(x.amount || 0), 0);
-    const list = [...this.items].sort((a, b) => a.date.localeCompare(b.date));
+    // 화면(draw)과 같게 내 경비만 — 대표·본사 계정은 회사 전체 경비를 받아 오므로 다른 매니저 것이 섞이지 않게
+    const me = window.SupabaseClient?.currentUser?.id;
+    const mine = this.items.filter(x => !me || !x.user_id || x.user_id === me);
+    const total = mine.reduce((s, x) => s + Number(x.amount || 0), 0);
+    const list = [...mine].sort((a, b) => a.date.localeCompare(b.date));
     return { name, y, m, total, list };
   },
 
@@ -247,7 +252,8 @@ const Expenses = {
 
   csv() {
     const { name, y, m, list } = this._lines();
-    const cell = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    // 엑셀이 =, +, -, @ 로 시작하는 칸을 수식으로 실행하지 않게 앞에 ' 를 붙임 (메모·장소에 수식을 넣어도 글자로만 보임)
+    const cell = (v) => { let s = String(v ?? ''); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; return `"${s.replace(/"/g, '""')}"`; };
     const schedules = window.hqStore?.getSchedules?.() || [];
     const rows = [['날짜', '항목', '금액', '메모', '관련 일정', '영수증'],
       ...list.map(x => { const s = schedules.find(z => z.id === x.schedule_id); return [x.date, this.cat(x.category).label, x.amount, x.memo || '', s ? (s.isSecret ? '비공개 일정' : s.title) : '', x.receipt_path || x.receipt_local ? '있음' : '']; })];
