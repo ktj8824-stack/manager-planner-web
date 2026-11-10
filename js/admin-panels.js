@@ -61,7 +61,7 @@
       const active = (art.status || '활동중') === '활동중';
       const line3 = [care ? `케어 메모: ${care}` : '', veh ? veh.name : ''].filter(Boolean).join(' · ');
       return `<button type="button" class="p2-row" onclick="Admin.openArtistFormModal(${J(art.id)})">
-        <span class="p2-av" style="background:${E(art.color || '#6366f1')}">${E(short(art.name).slice(0, 1))}</span>
+        <span class="p2-av" style="background:${E(art.color || '#4C57D6')}">${E(short(art.name).slice(0, 1))}</span>
         <span class="p2-main">
           <span class="l1"><b>${E(short(art.name))}</b><small>${E(art.type || '')} · ${E(art.members || 1)}명</small><em class="${active ? 'ok' : ''}">${E(active ? '활동 중' : (art.status || '휴식'))}</em></span>
           <span class="l2">${who ? '담당 ' + E(who) : '담당 매니저 없음'} · 이번 달 스케줄 ${nMonth}건</span>
@@ -149,7 +149,7 @@
     try {
       const n = (await window.hqStore.getManagers()).length;
       let slot = '';
-      try { const sub = window.hqStore.getSubscription(); slot = `슬롯 ${sub.activeManagerCount} / ${sub.totalSlots}석 (${sub.availableSlots}석 남음)`; } catch (e) { }
+      try { const sub = window.hqStore.getSubscription(); slot = `매니저 ${sub.activeManagerCount}명 / ${sub.totalSlots}자리 (${sub.availableSlots}자리 남음)`; } catch (e) { }
       head('modal-manager-management', '매니저 계정 · 담당 아티스트 배정', `${n}명${slot ? ' · ' + slot : ''}`);
     } catch (e) { }
   };
@@ -240,7 +240,7 @@
     box.innerHTML = [...sel.options].filter(o => o.value).map(o => {
       const a = arts.find(x => x.id === o.value);
       const on = sel.value === o.value;
-      const color = a ? (a.color || '#4f46e5') : '#52525b';
+      const color = a ? (a.color || '#3B45C4') : '#52525b';
       const label = a ? String(a.name || '').replace(/\s*\([^)]*\)\s*$/, '') : (o.value === 'ALL' ? '전원' : o.textContent);
       return `<button type="button" role="radio" aria-checked="${on}" data-v="${E(o.value)}" class="${on ? 'on' : ''} ${o.value === 'ALL' ? 'all' : ''}" style="--c:${E(color)}">${E(label)}</button>`;
     }).join('');
