@@ -205,7 +205,8 @@ const AutoNav = {
       </div>
       <div style="font-weight:800;font-size:15px;margin:18px 0 0;">3. 휴대폰에 자동 실행 등록</div>
       ${isAndroid ? android + ios : ios + android}
-      <a href="autonav-guide.html?from=app&os=${isAndroid ? 'android' : 'ios'}" style="display:flex;align-items:center;justify-content:center;width:100%;height:46px;margin-top:18px;border-radius:12px;background:#3B45C4;color:#fff;font-weight:800;font-size:15px;text-decoration:none;">그림으로 보는 설정 가이드</a>
+      <a href="autonav-guide.html?from=app&os=${isAndroid ? 'android' : 'ios'}" onclick="return AutoNav.guideClick('${isAndroid ? 'android' : 'ios'}')" style="display:flex;align-items:center;justify-content:center;width:100%;height:46px;margin-top:18px;border-radius:12px;background:#3B45C4;color:#fff;font-weight:800;font-size:15px;text-decoration:none;">그림으로 보는 설정 가이드</a>
+      <button type="button" onclick="AutoNav.markDone()" style="width:100%;height:46px;margin-top:8px;border-radius:12px;border:1px solid #3B45C4;background:#fff;color:#3B45C4;font-weight:800;font-size:15px;cursor:pointer;">✓ 설정 완료했어요</button>
       <button type="button" onclick="App.closeModal(); AutoNav.test()" style="width:100%;height:46px;margin-top:8px;border-radius:12px;border:1px solid #D5D9F7;background:#EEF0FD;color:#2B338F;font-weight:800;font-size:15px;cursor:pointer;">지금 시험해 보기</button>`;
     App.showModal('🚗 차에 타면 자동 길안내', html);
   },
@@ -223,7 +224,7 @@ const AutoNav = {
     const locked = typeof Plan !== 'undefined' && Plan.isIndie && Plan.isIndie() && !Plan.can('autonav');   // 무료 개인 매니저: 설정 전에 알림
     const canTrial = locked && Plan.trialUsed && !Plan.trialUsed();   // 아직 체험 전 → 누르면 7일 무료 체험
     return `<div class="an-promo" role="note">
-      <a class="an-promo-go" href="autonav-guide.html?from=app&os=${os}"${canTrial ? ` onclick="Plan.startTrial();"` : locked ? ` onclick="event.preventDefault(); Plan.require('autonav');"` : ''}>
+      <a class="an-promo-go" href="autonav-guide.html?from=app&os=${os}"${canTrial ? ` onclick="Plan.startTrial(); return AutoNav.guideClick('${os}');"` : locked ? ` onclick="event.preventDefault(); Plan.require('autonav');"` : ` onclick="return AutoNav.guideClick('${os}')"`}>
         <span class="an-promo-ic" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17h14M6 17l1.5-5h9L18 17M7.5 12l1.2-3.6A2 2 0 0 1 10.6 7h2.8a2 2 0 0 1 1.9 1.4L16.5 12"/><circle cx="8" cy="17" r="1.6"/><circle cx="16" cy="17" r="1.6"/></svg></span>
         <span class="an-promo-t"><b>차에 타면 길안내가 저절로</b><small>${canTrial ? '7일 무료 체험 · 차에 연결되면 내비 자동 실행' : locked ? '유료 기능 · 무료 체험이 끝났어요' : (Plan.isIndie && Plan.isIndie() && !Plan.isPaid() && Plan.trialActive() ? `무료 체험 중 · ${Plan.trialLeftText()}` : '차에 연결되면 다음 일정 내비 자동 실행')}</small></span>
         <span class="an-promo-btn">${canTrial ? '무료 체험' : locked ? '알아보기' : '1분 설정'}</span>
@@ -231,6 +232,18 @@ const AutoNav = {
       <button type="button" class="an-promo-x" aria-label="다시 보지 않기" onclick="AutoNav.hidePromo()">✕</button>
     </div>`;
   },
+  /** '설정 완료' 버튼: 홈의 '1분 설정' 안내를 더 띄우지 않음 (가이드 안·설정 창에서 누름) */
+  markDone() {
+    try { localStorage.setItem('rp_autonav_setup_done', '1'); } catch (e) { }
+    this.hidePromo();
+    if (this.closeGuide) this.closeGuide();
+    try { if (typeof App !== 'undefined' && App.closeModal) App.closeModal(); } catch (e) { }
+    try { if (typeof Sheet !== 'undefined' && Sheet.close) Sheet.close(); } catch (e) { }
+    document.querySelectorAll('.modal-back').forEach(m => m.remove());
+    const msg = '설정 완료! 홈에 설정 안내가 더 뜨지 않아요';
+    if (typeof U !== 'undefined' && U.toast) U.toast(msg); else if (typeof App !== 'undefined' && App.toast) App.toast(msg);
+  },
+
   hidePromo() {
     try { localStorage.setItem('rp_autonav_promo_off', '1'); } catch (e) { }
     document.querySelectorAll('.an-promo').forEach(el => el.remove());
@@ -426,6 +439,114 @@ const AutoNav = {
     window.addEventListener('pagehide', () => this._keepNotice());
     window.addEventListener('hq-store-change', () => { clearTimeout(this._wt); this._wt = setTimeout(() => this._sendNative(this._can('alerts') ? this._myDriveSteps() : []), 1500); });
   },
+
+  /** 설정 가이드: 앱을 떠나지 않고 화면 위에 띄움 (위 시계 줄 겹침 없이, 아래 메뉴는 그대로, 광고 줄은 숨김) */
+  guideClick(os) { this.showGuide(os); return false; },
+  showGuide(os) {
+    if (typeof App !== 'undefined' && App.closeModal) { try { App.closeModal(); } catch (e) { } }
+    this.closeGuide();
+    const el = document.createElement('div');
+    el.id = 'an-guide';
+    const nav = document.getElementById('bottom-nav');
+    if (nav && nav.offsetParent !== null) el.style.bottom = nav.getBoundingClientRect().height + 'px';
+    el.innerHTML = `<div class="ang-bar"><button type="button" class="ang-back" onclick="AutoNav.closeGuide()" aria-label="뒤로">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+        <b>차에 타면 자동 길안내</b></div>
+      <iframe src="autonav-guide.html?from=app&os=${os === 'android' ? 'android' : 'ios'}&embed=1" title="자동 길안내 설정 가이드"></iframe>`;
+    document.body.appendChild(el);
+    document.body.classList.add('guide-open');
+    if (!this._msgHooked) {
+      window.addEventListener('message', e => { if (e.data && e.data.anGuide === 'close') this.closeGuide(); else if (e.data && e.data.anGuide === 'done') this.markDone(); });
+      this._msgHooked = true;
+    }
+  },
+  closeGuide() {
+    const el = document.getElementById('an-guide');
+    if (el) el.remove();
+    document.body.classList.remove('guide-open');
+  },
 };
 
 window.AutoNav = AutoNav;
+
+
+/* =========================================
+   퇴근합시다 — 매니저가 일을 끝내고 누르면 그 시각이 퇴근 기록이 되고, 고른 곳으로 내비가 켜짐
+   - 집으로 / 회사로 / 직접 입력(약속 장소 등) 중 고름. 직접 입력한 장소 자체는 서버에 남기지 않음(종류만)
+   - 하루 한 줄(work_logs, 본인만 쓰는 기록). 다시 누르면 그 시각으로 바뀜. 본사 화면에는 보여 주지 않음
+   ========================================= */
+const WorkEnd = {
+  FROM_HOUR: 15,   // 오후 3시부터 홈에 보임 (오늘 퇴근 기록이 있으면 언제든 기록 줄)
+  _day(d = new Date()) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; },
+  _hm(t) { const d = new Date(t); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; },
+  _esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); },
+  _place(k) { const a = (typeof State !== 'undefined' && State.userAddresses) || {}; const p = a[k]; return p && (p.name || p.address) ? p : null; },
+  today() { try { const v = JSON.parse(localStorage.getItem('rp_workend') || 'null'); return v && v.day === this._day() ? v : null; } catch (e) { return null; } },
+  KIND: { home: '집', office: '회사', custom: '약속 장소' },
+
+  homeHtml() {
+    const t = this.today();
+    if (t) return `<div class="we-done" role="note"><span class="we-done-ic" aria-hidden="true">✓</span>
+      <span class="we-done-t"><b>오늘 ${this._hm(t.at)} 퇴근</b><small>${this._esc(this.KIND[t.kind] || '')}${t.eta ? ` · ${this._hm(t.at + t.eta * 60000)} 도착 예정` : ''}</small></span>
+      <button type="button" class="we-done-go" onclick="WorkEnd.open()">다시 길안내</button></div>`;
+    if (new Date().getHours() < this.FROM_HOUR) return '';
+    return `<button type="button" class="we-btn" onclick="WorkEnd.open()">
+      <span class="we-ic" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg></span>
+      <span class="we-t"><b>퇴근합시다</b><small>집·회사·원하는 곳으로 바로 내비</small></span>
+      <span class="we-go">퇴근</span></button>`;
+  },
+
+  open() {
+    const row = (k, ic, title, sub, on) => `<button type="button" class="we-opt${on ? '' : ' empty'}" onclick="WorkEnd.pick('${k}')">
+      <span class="we-opt-ic" aria-hidden="true">${ic}</span><span class="we-opt-t"><b>${title}</b><small>${sub}</small></span><span class="we-opt-go">›</span></button>`;
+    const h = this._place('home'), o = this._place('office');
+    App.showModal('퇴근합시다', `<p class="we-lead">오늘도 수고하셨어요. 어디로 갈까요? 고르면 바로 내비가 켜져요.</p>
+      ${row('home', '🏠', '집으로', h ? this._esc(h.name || h.address) : '집 주소를 등록하고 출발해요', !!h)}
+      ${row('office', '🏢', '회사로', o ? this._esc(o.name || o.address) : '회사 주소를 등록하고 출발해요', !!o)}
+      ${row('custom', '📍', '직접 입력', '약속 장소 등 원하는 곳', true)}`);
+  },
+
+  pick(kind) {
+    if (kind === 'custom') return App.openAddressSearch('퇴근하고 갈 곳', p => this.leave('custom', p));
+    const p = this._place(kind);
+    if (p) return this.leave(kind, p);
+    // 주소가 없으면 먼저 등록 → 바로 출발
+    App.openAddressSearch(kind === 'home' ? '🏠 집 주소 검색' : '🏢 회사 주소 검색', sel => {
+      if (!State.userAddresses) State.userAddresses = {};
+      if (kind === 'home') { State.userAddresses.home = sel; localStorage.setItem('bp_home', JSON.stringify(sel)); }
+      else { State.userAddresses.office = sel; localStorage.setItem('bp_office', JSON.stringify(sel)); }
+      this.leave(kind, sel);
+    });
+  },
+
+  /** 퇴근 기록 → 내비 → (가능하면) 도착 예정 시각을 채움 */
+  async leave(kind, p) {
+    try { App.closeModal(); } catch (e) { }
+    const at = Date.now();
+    const rec = { day: this._day(), at, kind, eta: null };
+    try { localStorage.setItem('rp_workend', JSON.stringify(rec)); } catch (e) { }
+    this._save(rec);
+    if (typeof U !== 'undefined' && U.toast) U.toast('오늘도 수고하셨어요! 길안내를 시작할게요');
+    if (typeof U !== 'undefined' && U.openNavigation) U.openNavigation(p.name || p.address, p.address || '');
+    this._refreshHome();
+    // 도착 예정: 지금 위치 → 목적지 (위치를 바로 못 받으면 건너뜀)
+    try {
+      if (!(p.lat && p.lng) || !navigator.geolocation || typeof TmapAPI === 'undefined') return;
+      const pos = await new Promise((ok, no) => navigator.geolocation.getCurrentPosition(ok, no, { timeout: 5000, maximumAge: 300000 }));
+      const min = await TmapAPI.getRouteTime(pos.coords.longitude, pos.coords.latitude, p.lng, p.lat);
+      if (!min) return;
+      rec.eta = min;
+      try { localStorage.setItem('rp_workend', JSON.stringify(rec)); } catch (e) { }
+      this._save(rec);
+      this._refreshHome();
+    } catch (e) { /* 위치·경로 실패 → 퇴근 시각만 */ }
+  },
+  async _save(rec) {
+    try { if (window.SupabaseClient && SupabaseClient.workLogSave) await SupabaseClient.workLogSave(rec); }
+    catch (e) { console.warn('[퇴근] 서버 기록 실패', e); }
+  },
+  _refreshHome() {
+    try { const el = document.getElementById('screen-home'); if (el && el.classList.contains('active') && typeof Home !== 'undefined' && Home.render) Home.render(); } catch (e) { }
+  },
+};
+window.WorkEnd = WorkEnd;
