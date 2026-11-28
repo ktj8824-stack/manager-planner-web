@@ -83,7 +83,7 @@ const Login = {
             </button>` : ''}
             <div id="google_btn_wrapper"></div>
             <button type="button" class="lg-link" onclick="Login.setTab('b2b')" style="background:none;border:0;color:#5B616E;font-size:13px;text-decoration:underline;padding:4px;cursor:pointer;">이메일 계정이 있어요 (테스트·심사용 계정 포함)</button>
-            <div class="lg-hint">${window.PROMO && PROMO.isFree() ? '출시 기념 · ' + PROMO.text() + ' (모든 기능)' : '아티스트 1명까지 무료예요'}</div>
+            ${U.iosApp() ? '' : `<div class="lg-hint">${window.PROMO && PROMO.isFree() ? '출시 기념 · ' + PROMO.text() + ' (모든 기능)' : '아티스트 1명까지 무료예요'}</div>`}
           </div>
         </div>
 
